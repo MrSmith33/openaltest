@@ -1,0 +1,19 @@
+{
+	"name" : "openaltest",
+
+	"authors" : [ "Andrey Penechko" ],
+	"license" : "BSL-1.0",
+
+	"dependencies" : {
+		"derelict-al": "==1.0.1",
+		"wave-d":"==1.0.2"
+	},
+
+	"targetName" : "openaltest",
+	
+	"sourcePaths" : [ "source" ],
+	"mainSourceFile": "source/main.d",
+	"targetPath" : "bin",
+	"workingDirectory" : "bin",
+	"targetType" : "executable"
+}
