@@ -200,6 +200,21 @@ struct Buffer
 	}
 }
 
+// Function to load wav sound. wave-d used here.
+// Sound is loaded in soundBuffer.
+Buffer loadWav(string soundName)
+{
+	import waved;
+	Sound sound = decodeWAV(soundName);
+    Buffer buffer;
+    buffer.init();
+    BufferFormat fmt = sound.numChannels == 1 ?
+    	BufferFormat.MONO_FLOAT : BufferFormat.STEREO_FLOAT;
+
+    buffer.loadData(fmt, cast(ubyte[])sound.data, sound.sampleRate);
+    return buffer;
+}
+
 // Convenience method for initialization of multiple buffers
 void init(Buffer[] buffers) {
 	foreach(ref b; buffers)
