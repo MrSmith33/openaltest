@@ -32,7 +32,23 @@ void main()
 
     playSound(buffer, source);
 	Thread.sleep(1000.msecs);
-    playStream(source);
+
+	// Stream parameters.
+	enum numBuffers = 3;
+	enum freq = 8000;
+	enum secFrac = 500;
+	//enum sampleLength = freq / secFrac;
+	enum sampleLength = 100;
+	enum uint sampleMsecs = (sampleLength * 1000) / freq;
+	size_t t;
+    playStream(source, numBuffers, freq, sampleLength, sampleMsecs,
+    	(float[] buffer) {
+			foreach(ref sample; buffer)
+			{
+				sample = cast(float)gen(t) / ubyte.max;
+				++t;
+			}
+		});
     audioContext.release();
 }
 
@@ -131,39 +147,28 @@ void playSound(Buffer buffer, Source source)
 // Stream player function.
 // Fills buffers first and then loops
 // and fills used buffers to keep stream playing.
-void playStream(ref Source source)
+void playStream(
+	ref Source source, size_t numBuffers,
+	size_t frequency, size_t bufferLength,
+	size_t delayMsecs,
+	void delegate(float[]) dataProvider)
 {
-	// Stream parameters.
-	enum numBuffers = 3;
-	enum freq = 8000;
-	enum secFrac = 500;
-	//enum sampleLength = freq / secFrac;
-	enum sampleLength = 100;
-	enum uint sampleMsecs = (sampleLength * 1000) / freq;
-
-	Buffer[numBuffers] streamBuffers;
+	Buffer[] streamBuffers = new Buffer[numBuffers];
 	streamBuffers.init();
 
-	ubyte[sampleLength] sampleBuffer;
+	float[] sampleBuffer = new float[bufferLength];
 
 	// Detach buffer of previos sound.
 	source.detachBuffer();
 
-	// Sample index passed to generator.
-	size_t t;
-
 	// Buffer fill function.
 	void fillBuffer(Buffer bufferToFill)
 	{
-		// Generate each sample.
-		foreach(ref sample; sampleBuffer)
-		{
-			sample = gen(t);
-			t++;
-		}
+		dataProvider(sampleBuffer);
 
 		// Load data into buffer
-		bufferToFill.loadData(BufferFormat.MONO_UBYTE, sampleBuffer, freq);
+		bufferToFill.loadData(BufferFormat.MONO_FLOAT,
+			cast(ubyte[])sampleBuffer, frequency);
 	}
 
 	foreach(buffer; streamBuffers) {
@@ -180,9 +185,9 @@ void playStream(ref Source source)
 		streamBuffers.release();
 	}
 
-	Buffer[numBuffers] buffers;
+	Buffer[] buffers = new Buffer[numBuffers];
 	while(true) {
-		Thread.sleep(sampleMsecs.msecs);
+		Thread.sleep(delayMsecs.msecs);
 
 		Buffer[] processedBuffers = source.unqueueProcessedBuffers(buffers);
 
