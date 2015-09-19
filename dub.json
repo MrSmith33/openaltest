@@ -6,11 +6,12 @@
 
 	"dependencies" : {
 		"derelict-al": "==1.0.1",
-		"wave-d":"==1.0.2"
+		"wave-d":"==1.0.2",
+		"dplug:dsp":"==1.1.29"
 	},
 
 	"targetName" : "openaltest",
-	
+
 	"sourcePaths" : [ "source" ],
 	"mainSourceFile": "source/main.d",
 	"targetPath" : "bin",

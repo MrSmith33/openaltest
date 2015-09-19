@@ -2,39 +2,7 @@ module audio;
 
 import derelict.openal.al;
 
-void checkAL(string file = __FILE__, size_t line = __LINE__)
-{
-	import std.string : format;
-	auto error = alGetError();
-	if (error != AL_NO_ERROR)
-		throw new Error(alErrorMessage(error), file, line);
-}
-
-string alErrorMessage(ALenum errorCode)
-{
-	return
-	[AL_NO_ERROR : "AL error: There is no current error",
-	 AL_INVALID_NAME : "AL error: Invalid name parameter",
-	 AL_INVALID_ENUM : "AL error: Invalid enum parameter",
-	 AL_INVALID_VALUE : "AL error: Invalid value",
-	 AL_INVALID_OPERATION : "AL error: invalid operation",
-	 AL_OUT_OF_MEMORY : "AL error: Unable to allocate memory"]
-	[errorCode];
-}
-
-string alcErrorMessage(ALCenum errorCode)
-{
-	return
-	[ALC_NO_ERROR : "(ALC) There is no current error",
-	 ALC_INVALID_DEVICE : "(ALC) Invalid device specifier",
-	 ALC_INVALID_CONTEXT : "(ALC) Invalid context specifier",
-	 ALC_INVALID_ENUM : "(ALC) Invalid enum parameter value",
-	 ALC_INVALID_VALUE : "(ALC) Invalid value",
-	 ALC_OUT_OF_MEMORY : "(ALC) Unable to allocate memory"]
-	[errorCode];
-}
-
-struct SoundSystem
+struct AudioContext
 {
 	ALCdevice* device;
 	ALCcontext* context;
@@ -50,11 +18,11 @@ struct SoundSystem
 		context = alcCreateContext(device, null);
 		assert(context, "Cannot create sound context");
 		check;
-		
+
 		// Enable context
 		alcMakeContextCurrent(context);
 		check;
-		
+
 		// Setup listener
 		alListener3f(AL_POSITION, 0, 0, 0);
 		checkAL;
@@ -65,7 +33,7 @@ struct SoundSystem
 	}
 
 	// Free all resources.
-	void release() { 
+	void release() {
 		alcMakeContextCurrent(null);
 		check;
 		alcDestroyContext(context);
@@ -78,7 +46,7 @@ struct SoundSystem
 	{
 		auto error = alcGetError(context);
 		if (error != ALC_NO_ERROR)
-			throw new Error(alcErrorMessage(error), file, line);
+			throw new Error(alcErrorMessage[error], file, line);
 	}
 }
 
@@ -98,7 +66,7 @@ struct Source
 		// Create source
 		alGenSources(1, &id);
 		checkAL;
-		
+
 		// Setup source
 		// Set sound speed to 100%
 		alSourcef(id, AL_PITCH, 1.0);
@@ -241,4 +209,33 @@ void init(Buffer[] buffers) {
 void release(Buffer[] buffers) {
 	foreach(ref b; buffers)
 		b.release();
-} 
+}
+
+void checkAL(string file = __FILE__, size_t line = __LINE__)
+{
+	import std.string : format;
+	auto error = alGetError();
+	if (error != AL_NO_ERROR)
+		throw new Error(alErrorMessage[error], file, line);
+}
+
+
+string[int] alErrorMessage;
+string[int] alcErrorMessage;
+
+static this() {
+	alErrorMessage =
+	[AL_NO_ERROR : "AL error: There is no current error",
+	 AL_INVALID_NAME : "AL error: Invalid name parameter",
+	 AL_INVALID_ENUM : "AL error: Invalid enum parameter",
+	 AL_INVALID_VALUE : "AL error: Invalid value",
+	 AL_INVALID_OPERATION : "AL error: invalid operation",
+	 AL_OUT_OF_MEMORY : "AL error: Unable to allocate memory"];
+	alcErrorMessage =
+	[ALC_NO_ERROR : "(ALC) There is no current error",
+	 ALC_INVALID_DEVICE : "(ALC) Invalid device specifier",
+	 ALC_INVALID_CONTEXT : "(ALC) Invalid context specifier",
+	 ALC_INVALID_ENUM : "(ALC) Invalid enum parameter value",
+	 ALC_INVALID_VALUE : "(ALC) Invalid value",
+	 ALC_OUT_OF_MEMORY : "(ALC) Unable to allocate memory"];
+}
