@@ -1,10 +1,12 @@
 module main;
 
+import std.stdio;
+
 import audio;
 import stream;
 import synth;
-import test;
 
+import test;
 
 void main()
 {
@@ -27,7 +29,10 @@ void main()
 			* fadeIn!(44_100, 100)(t - 32000);
 	}
 
+	writeln("Test: synth");
 	playGeneratedStream(params, &nextSample);
+	writeln("Test: wav");
 	testPlaySound("test.wav");
+	writeln("Test: stream, 30 sec");
 	testGeneratedStream();
 }

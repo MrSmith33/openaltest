@@ -25,7 +25,7 @@ void testPlaySound(string filename)
 void testGeneratedStream()
 {
 	StreamParams params = {freq:8000, numBuffers:3,
-		bufferLength:128, totalSamples:0, sleepMsecs:16};
+		bufferLength:128, totalSamples:8000 * 30, sleepMsecs:16};
 	playGeneratedStream(params,
 		delegate float(size_t t){return cast(float)gen(t) / 255;});
 }
