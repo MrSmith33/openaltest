@@ -2,8 +2,9 @@ module test;
 
 import audio;
 import stream;
+import synth;
 
-void testPlaySound()
+void testPlaySound(string filename)
 {
 	import core.thread;
 
@@ -11,7 +12,7 @@ void testPlaySound()
 	source.init();
 	scope(exit) source.release();
 
-	Buffer buffer = loadWav("endturn.wav");
+	Buffer buffer = loadWav(filename);
 	scope(exit) buffer.release();
 
 	source.attachBuffer(buffer);
@@ -24,8 +25,9 @@ void testPlaySound()
 void testGeneratedStream()
 {
 	StreamParams params = {freq:8000, numBuffers:3,
-		bufferLength:128, totalSamples:32_000, sleepMsecs:16};
-    playGeneratedStream(params, (size_t t) => cast(float)gen(t) / 255);
+		bufferLength:128, totalSamples:0, sleepMsecs:16};
+	playGeneratedStream(params,
+		delegate float(size_t t){return cast(float)gen(t) / 255;});
 }
 
 // Music code taken from:

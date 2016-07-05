@@ -117,7 +117,7 @@ struct Source
 		int numBuffers = 0;
 		alGetSourcei(id, AL_BUFFERS_PROCESSED, &numBuffers);
 		checkAL;
-		numBuffers = buffers.length < numBuffers ? buffers.length : numBuffers;
+		numBuffers = cast(int)(buffers.length < numBuffers ? buffers.length : numBuffers);
 		buffers = buffers[0..numBuffers];
 		foreach(ref buffer; buffers) {
 			alSourceUnqueueBuffers(id, 1, &buffer.id);
@@ -166,6 +166,12 @@ struct Source
 		checkAL;
 		return numQueued;
 	}
+
+	float gain(float gain_) @property {
+		alSourcef(id, AL_GAIN, gain_);
+		checkAL;
+		return gain_;
+	}
 }
 
 enum BufferFormat : int
@@ -175,7 +181,7 @@ enum BufferFormat : int
 	STEREO_UBYTE = AL_FORMAT_STEREO8,
 	STEREO_USHORT = AL_FORMAT_STEREO16,
 	MONO_FLOAT = AL_FORMAT_MONO_FLOAT32,
-    STEREO_FLOAT = AL_FORMAT_STEREO_FLOAT32,
+	STEREO_FLOAT = AL_FORMAT_STEREO_FLOAT32,
 }
 
 struct Buffer
@@ -194,8 +200,8 @@ struct Buffer
 		id = 0;
 	}
 
-	void loadData(BufferFormat format, ubyte[] data, int frequency) {
-		alBufferData(id, format, data.ptr, data.length, frequency);
+	void loadData(BufferFormat format, ubyte[] data, size_t frequency) {
+		alBufferData(id, format, data.ptr, cast(int)data.length, cast(int)frequency);
 		checkAL;
 	}
 }
@@ -206,13 +212,13 @@ Buffer loadWav(string soundName)
 {
 	import waved;
 	Sound sound = decodeWAV(soundName);
-    Buffer buffer;
-    buffer.init();
-    BufferFormat fmt = sound.numChannels == 1 ?
-    	BufferFormat.MONO_FLOAT : BufferFormat.STEREO_FLOAT;
+	Buffer buffer;
+	buffer.init();
+	BufferFormat fmt = sound.numChannels == 1 ?
+		BufferFormat.MONO_FLOAT : BufferFormat.STEREO_FLOAT;
 
-    buffer.loadData(fmt, cast(ubyte[])sound.data, sound.sampleRate);
-    return buffer;
+	buffer.loadData(fmt, cast(ubyte[])sound.data, sound.sampleRate);
+	return buffer;
 }
 
 // Convenience method for initialization of multiple buffers

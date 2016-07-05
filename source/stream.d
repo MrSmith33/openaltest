@@ -7,24 +7,26 @@ struct StreamParams
 	size_t freq = 44_100;
 	size_t numBuffers = 3;
 	size_t bufferLength = 512;
-	size_t totalSamples;
+	size_t totalSamples; // 0 if infinite
 	size_t sleepMsecs;
+	float volume = 1.0;
 }
 
 void playGeneratedStream(StreamParams params,
-	float delegate(size_t t) sampleGenerator)
+	float delegate(size_t) sampleGenerator)
 {
 	float[] sampleBuffer = new float[params.bufferLength];
 	size_t t;
 	Source source;
 	source.init();
+	source.gain = params.volume;
 	scope(exit) source.release();
 
 	// returns null after params.totalSamples generated
 	float[] generator()
 	{
 		size_t numSamples = params.bufferLength;
-		if (t + params.bufferLength > params.totalSamples)
+		if (t + params.bufferLength > params.totalSamples && params.totalSamples != 0)
 			numSamples = params.totalSamples - t;
 
 		foreach(ref sample; sampleBuffer[0..numSamples])
@@ -35,7 +37,7 @@ void playGeneratedStream(StreamParams params,
 		return sampleBuffer[0..numSamples];
 	}
 
-    playStream(source, params.numBuffers, params.freq, params.sleepMsecs, &generator);
+	playStream(source, params.numBuffers, params.freq, params.sleepMsecs, &generator);
 }
 
 // Stream player function.
