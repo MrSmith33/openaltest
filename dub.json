@@ -6,7 +6,7 @@
 
 	"dependencies" : {
 		"derelict-al": "==1.0.1",
-		"wave-d":"==1.0.2"
+		"wave-d":"==1.0.3"
 	},
 
 	"sourcePaths" : ["source"],
