@@ -5,14 +5,43 @@ Authors: Andrey Penechko.
 */
 module test;
 
+import core.thread : Thread, msecs;
+import std.string : fromStringz;
+import std.stdio : writefln;
+
 import audio;
 import stream;
 import synth;
+import capture;
+
+void testCapture()
+{
+	enum freq = 24000;
+	enum samplesToRecord = 48000;
+	enum deviceBufferSize = 2048;
+	enum userBufferSize = 1024;
+	enum sleepMsecs = 10;
+
+	size_t samplesRecorded;
+	ushort[userBufferSize] consumerBuffer;
+
+	bool consumer(ushort[] samples)
+	{
+		samplesRecorded += samples.length;
+		writefln("recorded %s of %s samples", samplesRecorded, samplesToRecord);
+
+		if (samplesRecorded < samplesToRecord) {
+			return true; // continue
+		}
+		else
+			return false; // stop capturing
+	}
+
+	captureStream(deviceBufferSize, consumerBuffer[], freq, sleepMsecs, &consumer);
+}
 
 void testPlaySound(string filename)
 {
-	import core.thread;
-
 	Source source;
 	source.init();
 	scope(exit) source.release();
@@ -27,10 +56,31 @@ void testPlaySound(string filename)
 	source.detachBuffer();
 }
 
-void testGeneratedStream()
+void testSynth()
 {
-	StreamParams params = {freq:8000, numBuffers:3,
-		bufferLength:128, totalSamples:8000 * 30, sleepMsecs:16};
+	StreamParams params = {
+		freq:44_100,
+		numBuffers:3,
+		bufferLength:1024,
+		totalSamples:44_100*5,
+		sleepMsecs:20,
+		volume:0.5};
+
+	float nextSample(size_t t)
+	{
+		return synth.sin!(44_100, 440)(t)
+			* fadeOut!(44_100, 100)(t - 64000)
+			* fadeIn!(44_100, 100)(t - 32000);
+	}
+
+	playGeneratedStream(params, &nextSample);
+}
+
+void testGeneratedStream(size_t seconds)
+{
+	enum FREQ = 8000;
+	StreamParams params = {freq:FREQ, numBuffers:3,
+		bufferLength:128, totalSamples:FREQ * seconds, sleepMsecs:16};
 	playGeneratedStream(params,
 		delegate float(size_t t){return cast(float)gen(t) / 255;});
 }

@@ -5,7 +5,13 @@ Authors: Andrey Penechko.
 */
 module audio;
 
+import std.stdio : writefln;
+import std.string : fromStringz;
 import derelict.openal.al;
+
+void loadOpenAL() {
+	DerelictAL.load();
+}
 
 struct AudioContext
 {
@@ -13,20 +19,19 @@ struct AudioContext
 	ALCcontext* context;
 
 	void init() {
-		DerelictAL.load();
 		// Open sound device
 		device = alcOpenDevice(null);
 		assert(device, "Cannot open sound device");
-		check;
+		checkALC(context);
 
 		// Create context
 		context = alcCreateContext(device, null);
 		assert(context, "Cannot create sound context");
-		check;
+		checkALC(context);
 
 		// Enable context
 		alcMakeContextCurrent(context);
-		check;
+		checkALC(context);
 
 		// Setup listener
 		alListener3f(AL_POSITION, 0, 0, 0);
@@ -40,19 +45,19 @@ struct AudioContext
 	// Free all resources.
 	void release() {
 		alcMakeContextCurrent(null);
-		check;
+		checkALC(context);
 		alcDestroyContext(context);
-		check;
+		checkALC(context);
 		alcCloseDevice(device);
-		check;
+		checkALC(context);
 	}
+}
 
-	void check(string file = __FILE__, size_t line = __LINE__)
-	{
-		auto error = alcGetError(context);
-		if (error != ALC_NO_ERROR)
-			throw new Error(alcErrorMessage[error], file, line);
-	}
+void checkALC(ALCcontext* context, string file = __FILE__, size_t line = __LINE__)
+{
+	auto error = alcGetError(context);
+	if (error != ALC_NO_ERROR)
+		throw new Error(alcErrorMessage[error], file, line);
 }
 
 enum SourceState : int
@@ -179,12 +184,83 @@ struct Source
 	}
 }
 
+struct CaptureDevice
+{
+	ALCdevice* device;
+
+	static const(char)* defaultDeviceName() {
+		auto name = alcGetString(null, ALC_CAPTURE_DEFAULT_DEVICE_SPECIFIER);
+		checkAL;
+		return name;
+	}
+
+	const(char)[] name() {
+		auto str = alcGetString(device, ALC_CAPTURE_DEVICE_SPECIFIER);
+		checkAL;
+		return str.fromStringz;
+	}
+
+	bool open(const(char)* deviceName, size_t frequency, BufferFormat format, size_t bufferSize) {
+		device = alcCaptureOpenDevice(deviceName, cast(uint)frequency, cast(int)format, cast(int)bufferSize);
+		checkAL;
+		return device !is null;
+	}
+
+	void close() {
+		alcCaptureCloseDevice(device);
+		checkAL;
+	}
+
+	void startCapture() {
+		alcCaptureStart(device);
+		checkAL;
+	}
+
+	void stopCapture() {
+		alcCaptureStop(device);
+		checkAL;
+	}
+
+	void captureSamples(T)(T[] buffer) {
+		alcCaptureSamples(device, cast(void*)buffer.ptr, cast(int)buffer.length);
+		checkAL;
+	}
+
+	size_t samplesAvailable() {
+		int capturedSamples;
+		alcGetIntegerv(device, ALC_CAPTURE_SAMPLES, 1, &capturedSamples);
+		checkAL;
+		return capturedSamples;
+	}
+}
+
+void listCaptureDevices()
+{
+	import derelict.openal.al;
+
+	const(char)* devList = alcGetString(null, ALC_CAPTURE_DEVICE_SPECIFIER);
+
+	if (devList)
+	{
+		writefln("Available Capture Devices are:");
+
+		size_t i = 1;
+		while (*devList)
+		{
+			const(char)[] devName = fromStringz(devList);
+			writefln("%s. %s", i, devName);
+			devList += devName.length + 1;
+			++i;
+		}
+	}
+}
+
 enum BufferFormat : int
 {
-	MONO_UBYTE = AL_FORMAT_MONO8,
-	MONO_USHORT = AL_FORMAT_MONO16,
-	STEREO_UBYTE = AL_FORMAT_STEREO8,
-	STEREO_USHORT = AL_FORMAT_STEREO16,
+	MONO_8 = AL_FORMAT_MONO8,
+	MONO_16 = AL_FORMAT_MONO16,
+	STEREO_8 = AL_FORMAT_STEREO8,
+	STEREO_16 = AL_FORMAT_STEREO16,
 	MONO_FLOAT = AL_FORMAT_MONO_FLOAT32,
 	STEREO_FLOAT = AL_FORMAT_STEREO_FLOAT32,
 }

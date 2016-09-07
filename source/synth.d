@@ -30,10 +30,10 @@ struct DynSampleGenerator
 
 // sound generation
 
-import std.math : cos, sin, PI;
 
 float sin(size_t sampleRate, float sinFrequency)(size_t t)
 {
+	import std.math : sin, PI;
 	return sin(t * 2.0 * PI * sinFrequency / sampleRate);
 }
 
