@@ -13,28 +13,41 @@ import audio;
 import stream;
 import synth;
 import capture;
+import wav;
 
 void testCapture()
 {
 	enum freq = 24000;
 	enum samplesToRecord = 48000;
-	enum deviceBufferSize = 2048;
-	enum userBufferSize = 1024;
+	enum userBufferSize = FileWriter.CAPACITY / float.sizeof;
+	enum deviceBufferSize = userBufferSize * 2;
 	enum sleepMsecs = 10;
+	enum numChannels = 1;
 
 	size_t samplesRecorded;
-	ushort[userBufferSize] consumerBuffer;
+	float[userBufferSize] consumerBuffer;
 
-	bool consumer(ushort[] samples)
+	WavStreamWriter writer;
+	writer.open("capture.wav");
+	scope(exit) writer.close();
+
+	writer.writeHeader(freq, numChannels);
+
+	bool consumer(float[] samples)
 	{
 		samplesRecorded += samples.length;
 		writefln("recorded %s of %s samples", samplesRecorded, samplesToRecord);
 
-		if (samplesRecorded < samplesToRecord) {
+		if (samplesRecorded < samplesToRecord)
+		{
+			writer.writeChunk(samples);
 			return true; // continue
 		}
 		else
+		{
+			writer.writeChunk(samples[0..$-(samplesRecorded - samplesToRecord)]);
 			return false; // stop capturing
+		}
 	}
 
 	captureStream(deviceBufferSize, consumerBuffer[], freq, sleepMsecs, &consumer);

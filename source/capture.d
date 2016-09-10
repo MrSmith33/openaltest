@@ -13,17 +13,17 @@ import audio : BufferFormat, CaptureDevice;
 
 void captureStream(
 	size_t deviceBufferSize,
-	ushort[] consumerBuffer,
+	float[] consumerBuffer,
 	size_t frequency,
 	size_t delayMsecs,
-	bool delegate(ushort[]) dataConsumer)
+	bool delegate(float[]) dataConsumer)
 {
 	// Get the name of the 'default' capture device
 	const(char)* defaultCaptureDevice = CaptureDevice.defaultDeviceName;
 	writefln("Default Capture Device is '%s'", defaultCaptureDevice.fromStringz);
 
 	CaptureDevice device;
-	if (device.open(defaultCaptureDevice, frequency, BufferFormat.MONO_16, deviceBufferSize))
+	if (device.open(defaultCaptureDevice, frequency, BufferFormat.MONO_FLOAT, deviceBufferSize))
 	{
 		writefln("Opened '%s' Capture Device", device.name);
 		writefln("device buffer %s, user buffer %s", deviceBufferSize, consumerBuffer.length);
@@ -35,7 +35,7 @@ void captureStream(
 			if (delayMsecs > 0)
 				Thread.sleep(delayMsecs.msecs);
 
-			if (device.samplesAvailable > consumerBuffer.length)
+			if (device.samplesAvailable >= consumerBuffer.length)
 			{
 				device.captureSamples(consumerBuffer);
 				consumerRunning = dataConsumer(consumerBuffer);
