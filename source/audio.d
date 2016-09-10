@@ -291,7 +291,7 @@ struct Buffer
 // Sound is loaded in soundBuffer.
 Buffer loadWav(string soundName)
 {
-	import waved;
+	import wav;
 	Sound sound = decodeWAV(soundName);
 	Buffer buffer;
 	buffer.init();
